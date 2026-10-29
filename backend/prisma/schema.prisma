@@ -1,0 +1,57 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  tasks        Task[]
+}
+
+model Task {
+  id          String     @id @default(cuid())
+  title       String
+  description String?
+  subject     String
+  dueDate     DateTime
+  priority    Priority   @default(MEDIA)
+  status      TaskStatus @default(PENDENTE)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  ownerId     String
+  owner       User       @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  dependencies TaskDependency[] @relation("TaskDependencies")
+  dependents   TaskDependency[] @relation("TaskDependents")
+
+  @@index([ownerId, status])
+  @@index([ownerId, dueDate])
+}
+
+model TaskDependency {
+  taskId       String
+  dependencyId String
+  task         Task @relation("TaskDependencies", fields: [taskId], references: [id], onDelete: Cascade)
+  dependency   Task @relation("TaskDependents", fields: [dependencyId], references: [id], onDelete: Cascade)
+
+  @@id([taskId, dependencyId])
+}
+
+enum Priority {
+  BAIXA
+  MEDIA
+  ALTA
+}
+
+enum TaskStatus {
+  PENDENTE
+  EM_ANDAMENTO
+  CONCLUIDA
+}
